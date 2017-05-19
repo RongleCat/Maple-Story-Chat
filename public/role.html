@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/role_01.css">
+</head>
+
+<body>
+    <div id="app" @click="getFocus">
+        <div class="canvas">
+            <div class="role-container" :class="[{filp:isfilp},stateClass]" :style="{left:left+'px'}">
+                <div class="role-imgbox"></div>
+                <div class="namebox">{{userName}}</div>
+            </div>
+        </div>
+        <input type="text" style="opacity:0" id="jiaodian" v-focus @keyup="stopMove" @keydown.up="changePos('up')" @keydown.down="changePos('down')" @keydown.left="changePos('left')" @keydown.right="changePos('right')">
+    </div>
+    <div class="tip">操作方法：向左走 ←，向右走 →，趴下 ↓，失去焦点后点击中间画面重新获取焦点。</div>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/2.1.3/vue.js"></script>
+    <script>
+        Vue.directive('focus', {
+            inserted: function(el) {
+                el.focus()
+            }
+        })
+        var app = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    isfilp: false,
+                    stateType: 0,
+                    stateIndex: 0,
+                    speed: 500,
+                    rule: [0, 1, 2, 1],
+                    timer: '',
+                    keydown: false,
+                    left: 10,
+                    userName: '秋名山花喵'
+                }
+            },
+            computed: {
+                stateClass() {
+                    return 'state_' + this.stateIndex
+                }
+            },
+            mounted() {
+                this.roleAnimation();
+            },
+            methods: {
+                changeType(speed, type) {
+                    this.speed = speed;
+                    this.stateType = type;
+                    if (type === 1) {
+                        this.rule = [3, 4, 5, 6];
+                    } else if (type === 0) {
+                        this.rule = [0, 1, 2, 1];
+                    } else {
+                        this.rule = [7];
+                    }
+                    this.roleAnimation();
+                },
+                roleAnimation() {
+                    let playIndex = 0;
+                    this.stateIndex = playIndex;
+                    window.clearInterval(this.timer);
+                    this.timer = setInterval(() => {
+                        this.stateIndex = this.rule[playIndex];
+                        if (playIndex == this.rule.length - 1) {
+                            playIndex = 0;
+                        } else {
+                            playIndex++
+                        }
+                    }, this.speed)
+                },
+                changePos(direction) {
+                    var that = this;
+                    switch (direction) {
+                        case 'left':
+                            if (!this.keydown) {
+                                this.keydown = true;
+                                that.isfilp = true;
+                                this.changeType(200, 1);
+                            }
+                            this.left - 4 < 0 ? this.left = 0 : this.left = this.left - 4;
+                            break;
+                        case 'right':
+                            if (!this.keydown) {
+                                this.keydown = true;
+                                that.isfilp = false;
+                                this.changeType(200, 1);
+                            }
+                            this.left + 4 > 1000 - 63 ? this.left = 1000 - 63 : this.left = this.left + 4;
+                            break;
+                        case 'down':
+                            if (!this.keydown) {
+                                this.keydown = true;
+                                this.changeType(0, 2);
+                            }
+                            break;
+                    }
+                },
+                stopMove() {
+                    this.changeType(500, 0);
+                    this.keydown = false;
+                    console.log('aaa');
+                },
+                getFocus() {
+                    document.all('jiaodian').focus();
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>

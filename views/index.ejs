@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>
+        <%= title %>
+    </title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <style>
+        * {
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .canvas {
+            width: 1000px;
+            height: 700px;
+            border: 1px solid #ccc;
+            position: relative;
+        }
+        
+        .users {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        .users span {
+            position: absolute;
+            top: -1.2em;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="canvas" ref="canvas" @click="getFocus">
+            <div class="users" v-for="(value, key, index) in users" :key="index" :style="value" @click="deleteUser(key)"><span>{{key}}</span></div>
+        </div>
+        <div v-if="inputShow">
+            <label for="joinGame">请输入昵称加入游戏</label>
+            <input type="text" v-model="myName" @keyup.enter="addUser" id="joinGame">
+        </div>
+        <input ref="jiaodian" type="text" @keydown.up="changePos('up')" @keydown.down="changePos('down')" @keydown.left="changePos('left')" @keydown.right="changePos('right')" style="opacity:0">
+    </div>
+    <script src="/js/socket.io.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/2.1.3/vue.js"></script>
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    users: {},
+                    myName: '',
+                    socket: '',
+                    inputShow: true,
+                    pos: {},
+                    isIn: false
+                }
+            },
+            mounted() {
+                var that = this;
+                that.socket = io.connect('http://www.fmcat.top:3000');
+                that.socket.on('connect', function(data) {
+                    that.socket.on('getUsers', (data) => {
+                        that.users = data;
+                    });
+                    that.socket.on('msg', function(data) {
+                        console.log(data);
+                    });
+                    that.socket.on('changeItem',(data)=>{
+                        console.log(data);
+                        that.users[data.name] = data.item;
+                    })
+                    console.log(that.socket);
+                });
+                console.log(this.$refs.canvas);
+            },
+            methods: {
+                addUser() {
+                    this.socket.emit('addUsers', {
+                        myName: this.myName
+                    });
+                    this.socket.on('addUsersState', (data) => {
+                        if (data.code === 200) {
+                            this.inputShow = !this.inputShow;
+                            this.isIn=true;
+                            this.pos = data.pos;
+                            this.$refs.jiaodian.focus();
+                            console.log(this.users[this.myName]);
+                        } else {
+                            alert(data.msg)
+                        }
+                    })
+                },
+                changePos(type) {
+                    let that = this;
+                    console.log(type);
+                    if (this.isIn) {
+                        switch (type) {
+                            case 'up':
+                                this.pos.top--;
+                                    break;
+                            case 'down':
+                                this.pos.top++;
+                                    break;
+                            case 'left':
+                                this.pos.left--;
+                                    break;
+                            case 'right':
+                                this.pos.left++;
+                                    break;
+                        }
+                    }
+                    that.socket.emit('changePos',that.pos);
+                },
+                getFocus(){
+                    this.$refs.jiaodian.focus();
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
