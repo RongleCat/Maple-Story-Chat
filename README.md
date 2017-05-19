@@ -2,7 +2,10 @@
 
 > A Vue.js project
 
-请把views/role.ejs文件中http://www.fmcat.top:3000改为http://localhost:3000
+请把views/role.ejs文件中
+http://www.fmcat.top:3000
+改为
+http://localhost:3000
 
 ## Build Setup
 
