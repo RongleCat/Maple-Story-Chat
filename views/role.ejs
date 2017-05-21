@@ -8,13 +8,13 @@
     <title>
         <%= title %>
     </title>
-    <link rel="stylesheet" href="/css/role_01.css">
+    <link rel="stylesheet" href="/css/role_main.css">
 </head>
 
 <body>
     <div id="app">
         <div class="canvas" @click="getFocus('jiaodian')">
-            <div class="role-container" :class="[{filp:value.isfilp},stateClass(value.stateIndex)]" :style="{left:value.left+'px'}" v-for="(value, key, index) in users" :key="index">
+            <div class="role-container" :class="[{filp:value.isfilp},stateClass(value.stateIndex),getRoleClass(value.role)]" :ref="key" :style="{left:value.left+'px',bottom:value.bottom+'px'}" v-for="(value, key, index) in users" :key="index">
                 <div class="chatbox" v-if="value.chatIng">{{key}}：{{value.chatText}}</div>
                 <div class="role-imgbox"></div>
                 <div class="namebox">{{key}}</div>
@@ -25,15 +25,28 @@
             </div>
             <input type="text" placeholder="输入昵称加入聊天室" id="join" v-model="userName" @keyup.13="addUser" v-if="!join" @click.stop="">
         </div>
-
-        <input type="text" style="opacity:0" id="jiaodian" @keyup.13="getFocus('chat')" @keyup="stopMove" @keydown.up="changePos('up')" @keydown.down="changePos('down')" @keydown.left="changePos('left')" @keydown.right="changePos('right')">
+        <div class="role-select" :class="[{open:selectLayer,close:close}]">
+            <div class="pop-mask" @click="closePop"></div>
+            <div class="pop-layer">
+                <ul class="role-list">
+                    <li v-for="(value,index) in roleList" @dblclick="selectRole(value)">
+                        <div class="role-container isShow" :class="getRoleClass(value)">
+                            <div class="role-imgbox"></div>
+                        </div>
+                    </li>
+                </ul>
+                双击角色加入聊天室
+            </div>
+        </div>
+        <input type="text" style="opacity:0" id="jiaodian" @keyup.13="getFocus('chat')">
     </div>
     <div class="tip">操作方法：向左走 ←，向右走 →，趴下 ↓，聊天框获取焦点 enter，点击中间画面重新人物操作焦点。</div>
     <script src="/js/socket.io.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/2.1.3/vue.js"></script>
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script src="js/keyboard.min.js"></script>
     <script>
         window.onload = function() {
-
             Vue.directive('focus', {
                 inserted: function(el) {
                     el.focus()
@@ -47,6 +60,7 @@
                         isfilp: false,
                         stateIndex: 0,
                         left: 20,
+                        bottom: 0,
                         stateType: 0,
                         speed: 500,
                         rule: [0, 1, 2, 1],
@@ -56,11 +70,14 @@
                         chatIng: false,
                         chatText: '',
                         join: false,
-                        inputText: ''
+                        inputText: '',
+                        isJump: false,
+                        isMove: false,
+                        role: '',
+                        roleList: ['0|01', '1|01'],
+                        selectLayer: false,
+                        close: true
                     }
-                },
-                computed: {
-
                 },
                 mounted() {
                     let that = this;
@@ -78,41 +95,156 @@
                         })
                     });
                     setInterval(() => {
-                        if (that.join) {
-                            that.socket.emit('changeItem', {
-                                isfilp: that.isfilp,
-                                stateIndex: that.stateIndex,
-                                left: that.left,
-                                bottom: 0,
-                                chatIng: this.chatIng,
-                                chatText: this.chatText
-                            });
+                        $(function() {
+                            var $el = $(that.$refs[that.userName]);
+                            that.bottom = parseInt($el.css('bottom'));
+                            if (that.join) {
+                                that.socket.emit('changeItem', {
+                                    isfilp: that.isfilp,
+                                    stateIndex: that.stateIndex,
+                                    left: that.left,
+                                    bottom: that.bottom,
+                                    chatIng: that.chatIng,
+                                    chatText: that.chatText,
+                                    role: that.role
+                                });
+                            }
+                        });
+                    }, (1000 / 24));
+
+                    keyboardJS.watch(document.all('jiaodian'));
+                    keyboardJS.bind('down > right', function(e) {
+                        that.roleCtrl('right');
+                    }, function() {
+                        that.isMove = false;
+                        that.keydown = false;
+                        keyboardJS.pressKey('down');
+                    });
+                    keyboardJS.bind('down > left', function(e) {
+                        that.roleCtrl('left');
+                    }, function() {
+                        that.isMove = false;
+                        that.keydown = false;
+                        keyboardJS.pressKey('down');
+                    });
+                    keyboardJS.bind('right', function(e) {
+                        if (that.jump) {
+                            that.isfilp = false;
+                        } else {
+                            that.roleCtrl('right');
                         }
-                    }, 16.6);
+                    }, function() {
+                        that.isMove = false;
+                        that.keydown = false;
+                        that.stopMove();
+                    });
+                    keyboardJS.bind('left', function(e) {
+                        if (that.jump) {
+                            that.isfilp = true;
+                        } else {
+                            that.roleCtrl('left');
+                        }
+                    }, function() {
+                        that.isMove = false;
+                        that.keydown = false;
+                        that.stopMove();
+                    });
+                    keyboardJS.bind('down', function(e) {
+                        if (!that.isMove) {
+                            that.roleCtrl('down');
+                        }
+                    }, function() {
+                        that.keydown = false;
+                        that.stopMove();
+                    });
+                    keyboardJS.bind('space', function(e) {
+                        that.roleCtrl('space');
+                    }, function() {
+                        that.keydown = false;
+                    });
+
+                    keyboardJS.bind('left > space', function(e) {
+                        that.jump = false;
+                    });
+
+                    keyboardJS.bind('right > space', function(e) {
+                        that.jump = false;
+                    });
+                    keyboardJS.bind('left > right', function(e) {
+                        that.stopMove();
+                    }, function() {
+                        that.isMove = false;
+                        that.keydown = false;
+                        that.stopMove();
+                    });
+                    keyboardJS.bind('right > left', function(e) {
+                        that.stopMove();
+                    }, function() {
+                        that.isMove = false;
+                        that.keydown = false;
+                        that.stopMove();
+                    });
                 },
                 methods: {
-                    addUser() {
+                    getRoleClass(value) {
+                        var sex = ['nan', 'nv'];
+                        var arr = value.split('|');
+                        return 'role_' + sex[parseInt(arr[0])] + '_' + arr[1];
+                    },
+                    selectRole(value) {
                         var that = this;
+                        this.role = value;
                         this.socket.emit('addUsers', {
-                            userName: this.userName,
+                            userName: that.userName,
                             userOpt: {
                                 isfilp: that.isfilp,
                                 stateIndex: that.stateIndex,
                                 left: that.left,
                                 bottom: 0,
-                                chatIng: this.chatIng,
-                                chatText: this.chatText
+                                chatIng: that.chatIng,
+                                chatText: that.chatText,
+                                role: that.role
                             }
                         });
+                    },
+                    addUser() {
+                        var that = this;
+                        this.socket.emit('checkUserName', {
+                            userName: that.userName
+                        });
+                        this.socket.on('checkUserName', (data) => {
+                            if (data.code === 200) {
+                                this.selectLayer = true;
+                            } else {
+                                alert(data.msg)
+                            }
+                        });
+                        that.selectLayer = true;
+                        this.close = false;
                         this.socket.on('addUsersState', (data) => {
                             if (data.code === 200) {
                                 this.join = true;
                                 this.isIn = true;
+                                this.closePop();
                                 document.all('jiaodian').focus();
+                                $(that.$refs[that.userName][0]).on('click', function() {
+                                    $(this).animate({
+                                        bottom: 80
+                                    }, 300).animate({
+                                        bottom: 0
+                                    }, 300);
+                                });
                             } else {
                                 alert(data.msg)
                             }
                         })
+                    },
+                    closePop() {
+                        var that = this;
+                        that.selectLayer = false;
+                        setTimeout(function() {
+                            that.close = true;
+                        }, 400);
                     },
                     chatEmit() {
                         let that = this;
@@ -132,6 +264,8 @@
                             this.rule = [3, 4, 5, 6];
                         } else if (type === 0) {
                             this.rule = [0, 1, 2, 1];
+                        } else if (type === 2) {
+                            this.rule = [8];
                         } else {
                             this.rule = [7];
                         }
@@ -153,31 +287,41 @@
                             }
                         }, this.speed)
                     },
-                    changePos(direction) {
+                    roleCtrl(keycode, other) {
                         var that = this;
-                        switch (direction) {
-                            case 'left':
-                                if (!this.keydown) {
-                                    this.keydown = true;
-                                    that.isfilp = true;
-                                    this.changeType(200, 1);
-                                }
-                                this.left - 4 < 0 ? this.left = 0 : this.left = this.left - 4;
-                                break;
-                            case 'right':
-                                if (!this.keydown) {
-                                    this.keydown = true;
-                                    that.isfilp = false;
-                                    this.changeType(200, 1);
-                                }
-                                this.left + 4 > 800 - 63 ? this.left = 800 - 63 : this.left = this.left + 4;
-                                break;
-                            case 'down':
-                                if (!this.keydown) {
-                                    this.keydown = true;
-                                    this.changeType(0, 2);
-                                }
-                                break;
+                        if (keycode === 'left') {
+                            if (!that.isMove) {
+                                that.keydown = false;
+                                that.isMove = true;
+                            }
+                            if (!that.keydown) {
+                                that.isfilp = true;
+                                that.keydown = true;
+                                that.changeType(150, 1);
+                            }
+                            that.left - 4 < 0 ? that.left = 0 : that.left = that.left - 4;
+                        } else if (keycode === 'right') {
+                            if (!that.isMove) {
+                                that.keydown = false;
+                                that.isMove = true;
+                            }
+                            if (!that.keydown) {
+                                that.isfilp = false;
+                                that.keydown = true;
+                                that.changeType(150, 1);
+                            }
+                            that.left + 4 > 1000 - 63 ? that.left = 1000 - 63 : that.left = that.left + 4;
+                        } else if (keycode === 'down') {
+                            if (!that.keydown) {
+                                that.keydown = true;
+                                that.changeType(0, 2);
+                            }
+                        } else if (keycode === 'space') {
+                            if (!that.keydown) {
+                                that.keydown = true;
+                                that.changeType(0, 3);
+                                that.roleJump();
+                            }
                         }
                     },
                     stopMove() {
@@ -189,6 +333,22 @@
                         this.changeType(500, 0);
                         this.keydown = false;
                         console.log('aaa');
+                    },
+                    roleJump() {
+                        var that = this;
+                        var $el = $(that.$refs[that.userName]);
+                        console.log($el);
+                        if (!this.jump) {
+                            this.jump = true;
+                            $el.animate({
+                                bottom: 80
+                            }, 280).animate({
+                                bottom: 0
+                            }, 280, function() {
+                                that.jump = false;
+                                that.stopMove();
+                            });
+                        }
                     },
                     getFocus(id) {
                         document.all(id).focus();

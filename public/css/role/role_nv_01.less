@@ -1,0 +1,28 @@
+.role_nv_01 {
+    width: 63px;
+    height: 76px;
+    .role-imgbox {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 85px;
+        width: 100%;
+        background-image: url('../images/role/role_nv_01.png');
+        background-repeat: no-repeat;
+    }
+    .chatbox{
+        bottom: 80px;
+    }
+    .intro-loop(9);
+}
+
+.intro-loop(@n,
+@i: 0) when (@i <=@n) {
+    &.state_@{i} {
+        .role-imgbox {
+            background-position-x: @i*-63px;
+        }
+    }
+    .intro-loop(@n,
+    (@i + 1));
+}

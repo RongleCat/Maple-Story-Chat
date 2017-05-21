@@ -1,0 +1,46 @@
+.role_nan_01 {
+  width: 63px;
+  height: 86px;
+}
+.role_nan_01 .role-imgbox {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background-image: url('../images/role/role_nam_01.png');
+  background-repeat: no-repeat;
+}
+.role_nan_01 .chatbox {
+  bottom: 90px;
+}
+.role_nan_01.state_0 .role-imgbox {
+  background-position-x: 0px;
+}
+.role_nan_01.state_1 .role-imgbox {
+  background-position-x: -63px;
+}
+.role_nan_01.state_2 .role-imgbox {
+  background-position-x: -126px;
+}
+.role_nan_01.state_3 .role-imgbox {
+  background-position-x: -189px;
+}
+.role_nan_01.state_4 .role-imgbox {
+  background-position-x: -252px;
+}
+.role_nan_01.state_5 .role-imgbox {
+  background-position-x: -315px;
+}
+.role_nan_01.state_6 .role-imgbox {
+  background-position-x: -378px;
+}
+.role_nan_01.state_7 .role-imgbox {
+  background-position-x: -441px;
+}
+.role_nan_01.state_8 .role-imgbox {
+  background-position-x: -504px;
+}
+.role_nan_01.state_9 .role-imgbox {
+  background-position-x: -567px;
+}
