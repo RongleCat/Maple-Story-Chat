@@ -2,6 +2,8 @@
 
 > A Vue.js project
 
+预览地址：http://www.fmcat.top:3000/role
+
 请把views/role.ejs文件中
 http://www.fmcat.top:3000
 改为
