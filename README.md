@@ -2,7 +2,7 @@
 
 > A Vue.js project
 
-预览地址：http://www.fmcat.top:3000/role
+预览地址：http://chat.fmcat.top/role
 
 请把views/role.ejs文件中
 http://www.fmcat.top:3000
